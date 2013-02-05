@@ -1,0 +1,24 @@
+#!/bin/bash
+
+set -e
+
+# ANDROID_TOOLS= set it here or in env
+
+CC=/usr/bin/gcc
+CFLAGS=-std=gnu99
+ADB=$ANDROID_TOOLS/sdk/platform-tools/adb
+
+# $CC $CFLAGS -O3 write_test.c -g -lrt -o write_test_x64
+
+ANDROID_CC=$ANDROID_TOOLS/ndk/toolchains/arm-linux-androideabi-4.6/prebuilt/linux-x86_64/bin/arm-linux-androideabi-gcc
+
+$ANDROID_CC $CFLAGS \
+    --sysroot=$ANDROID_TOOLS/ndk/platforms/android-9/arch-arm \
+    -O3 write_test.c -g -o write_test_android
+
+$ADB shell "echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+$ADB shell "echo performance > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor"
+$ADB push write_test_android /data/local/tmp
+$ADB shell "echo 3 > /proc/sys/vm/drop_caches"
+
+$ADB shell /data/local/tmp/write_test_android
